@@ -26,9 +26,8 @@ class paramt{
 class triangle{
 	public:
 		node n1,n2,n3;
-		paramt Kd,Ks,Ka;  //漫反射系数，镜面反射系数，环境光反射系数
 		triangle();
-		triangle(node a,node b,node c,paramt Kd,paramt Ks,paramt Ka);
+		triangle(node a,node b,node c);
 		node getfx();    //计算法向量 
 		double getarea();   //计算面积 
 		node getjd(node R0,node Rd);   //计算交点,直线为P=R0+t*Rd 
@@ -38,6 +37,8 @@ class triangle{
 class lightmatter{    //物体
 	public:
 		int num;
+		char name[20];
+		paramt Kd,Ks,Ka;  //漫反射系数，镜面反射系数，环境光反射系数
 		std::vector <triangle> c;
 		lightmatter();
 		void add_one(triangle x,int index);   //在index位置添加一个
@@ -98,12 +99,19 @@ double dotans(node X,node Y);        //计算内积
 double detcalc(node X,node Y,node Z);   //计算行列式 
 
 node findcolor(node R0,node Rd,int index);   //返回的是三色的情况
+//node findcoloragain(node R0,node Rd);
 
 double mymin(double a,double b);
 
 int islightok(node R0,node mysource);  //判断是否与光线相交
 
 node getcolor(paramt Kd, node R);
+
+void readmtl();
+
+void readobj();
+
+node myrotate(node a,node p,double theta);
 
 extern std::vector<lightmatter> envir;
 extern source mysource;  //得到面光源位置

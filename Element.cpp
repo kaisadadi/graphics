@@ -2,9 +2,8 @@
 #include<cstdio>
 #include<cstdlib>
 #include<cmath>
-#include<random>
-#include<ctime>
 #include<vector>
+#include<cstring>
 
 int paintcolor[512][512][3];
 std::vector <lightmatter> envir;
@@ -77,18 +76,12 @@ triangle::triangle(){
 	this->n1=node(0,0,0);
 	this->n2=node(0,0,0);
 	this->n3=node(0,0,0);
-	this->Ka=paramt(0,0,0);
-	this->Kd=paramt(0,0,0);
-	this->Ka=paramt(0,0,0);
 }
 
-triangle::triangle(node a,node b,node c,paramt Kd,paramt Ks,paramt Ka){
+triangle::triangle(node a,node b,node c){
 	this->n1=a;
 	this->n2=b;
 	this->n3=c;
-	this->Kd=Kd;
-	this->Ks=Ks;
-	this->Ka=Ka;
 }
 
 node triangle::getfx(){
@@ -119,6 +112,7 @@ node triangle::getjd(node R0,node Rd){
 	double t=detcalc(S,E1,E2)/detcalc(Rd,E1,E2);
 	double beta=detcalc(Rd,S,E2)/detcalc(Rd,E1,E2);
 	double gamma=detcalc(Rd,E1,S)/detcalc(Rd,E1,E2);
+//	printf("%lf %lf %lf\n",t,beta,gamma);
 	node E;
 	if(t>0 && beta>=0 && gamma>=0 && beta<=1 && gamma<=1 && beta+gamma<=1){
 		E=node(R0.x+t*Rd.x,R0.y+t*Rd.y,R0.z+t*Rd.z);
@@ -194,7 +188,7 @@ node sphere::get_jd(node R0,node Rd){          //求与球体交点
 		t1=-b+sqrt(b*b-c);
 		t2=-b-sqrt(b*b-c);
 	}
-//	printf("%lf %lf %lf %lf\n",t1,t2,b,c);
+	//printf("%lf %lf %lf %lf\n",t1,t2,b,c);
 	node jd;
 	if(t2>0){
 		jd=node(R0.x+t2*Rd.x,R0.y+t2*Rd.y,R0.z+t2*Rd.z);
@@ -252,11 +246,12 @@ source::source(double xl,double xh,double yl,double yh,double height){
 }
 
 void camera::getpicture(screen sc){             
-	srand((int)time(0));
 	for(int i=1;i<=sc.row;i++){
 		for(int j=1;j<=sc.col;j++){
 			printf("%d %d\n",i,j);
 			node mypos=sc.get_pos(i,j);
+			//mypos.show();
+			//node mycolor=findcolor(mypos,mypos-(this->pos));
 			node mycolor=findcolor(this->pos,mypos-(this->pos),0);
 			paintcolor[i-1][j-1][0]=mymin(mycolor.x,255);
 			paintcolor[i-1][j-1][1]=mymin(mycolor.y,255);
@@ -276,9 +271,11 @@ nodeplus::nodeplus(node mynode,int pos){
 int islightok(node R0,node mysource){    //判断前往光源有无遮挡
 	node Rd=mysource-R0;
 	double t=(mysource.z-R0.z)/Rd.z;
+	if(t<=0){
+		return 0;
+	}
 	for(int i=0;i<envir.size();i++){
 		for(int j=0;j<envir[i].num;j++){
-			//printf("%d %d\n",i,j);
 			triangle temp=envir[i].get_one(j);
 			node crosspoint=temp.getjd(R0,Rd);   //求交点
 			if(crosspoint.x<0){   //无交点就换
@@ -290,8 +287,16 @@ int islightok(node R0,node mysource){    //判断前往光源有无遮挡
 			}
 		}
 	}
-	printf("veryhappy!\n");
 	return 1;
+}
+
+node myrotate(node a,node p,double theta){
+	theta=(theta/180.0)*3.1416;
+	node fxsecond;
+	fxsecond.x=p.x*cos(theta)+(a.y*p.z-a.z*p.y)*sin(theta)+a.x*(a.x*p.x+a.y*p.y+a.z*p.z)*(1-cos(theta));
+	fxsecond.y=p.y*cos(theta)+(a.z*p.x-a.x*p.z)*sin(theta)+a.y*(a.x*p.x+a.y*p.y+a.z*p.z)*(1-cos(theta));
+	fxsecond.z=p.z*cos(theta)+(a.x*p.y-a.y*p.x)*sin(theta)+a.z*(a.x*p.x+a.y*p.y+a.z*p.z)*(1-cos(theta));
+	return fxsecond;
 }
 
 
@@ -302,16 +307,14 @@ node getcolor(paramt Kd, node R){
 	newcolor.z+=Kd.b*R.z;
 	return newcolor;
 }
-
-node findcolor(node R0,node Rd,int index){   
+/*
+node findcoloragain(node R0,node Rd){
 	double mymin=1000000000;
-	node R0next=node(-1,-1,-1);
-	node R1next=node(-1,-1,-1);
-	node fx=node(-1,-1,-1),fx2,fx3;
-	paramt Ka;   //反射折射系数
-	paramt Kd;
+	node fx=node(-1,-1,-1);
+	node R0next;
+	paramt Kd,Ka;
 	triangle temp;
-	int ishave=0; 
+	node color;
 	for(int i=0;i<envir.size();i++){
 		for(int j=0;j<envir[i].num;j++){
 			temp=envir[i].get_one(j);
@@ -321,7 +324,6 @@ node findcolor(node R0,node Rd,int index){
 			}
 			double dis=(crosspoint-R0).getlenth();
 			if(dis<mymin){
-				ishave=0;
 				fx=temp.getfx();
 				fx=fx/fx.getlenth();
 				mymin=dis;
@@ -329,90 +331,280 @@ node findcolor(node R0,node Rd,int index){
 					fx=node(0,0,0)-fx;   //得到法向
 				}
 				R0next=crosspoint;
-				Ka=temp.Ka;
-				Kd=temp.Kd;
+				Ka=envir[i].Ka;
+				Kd=envir[i].Kd;
 			}
 			else if(dis==mymin){
-				ishave++;
-				if(ishave==1){
-					fx2=temp.getfx();
-					fx2=fx2/fx2.getlenth();
-					if(dotans(fx2,Rd)>0){
-						fx2=node(0,0,0)-fx2;   //得到法向
-					}
-					Ka=paramt((Ka.r+temp.Ka.r)/2,(Ka.g+temp.Ka.g)/2,(Ka.b+temp.Ka.b)/2);
-					Kd=paramt((Kd.r+temp.Kd.r)/2,(Kd.g+temp.Kd.g)/2,(Kd.b+temp.Kd.b)/2);
-				}	
-				else if(ishave==2){
-					fx3=temp.getfx();
-					fx3=fx3/fx3.getlenth();
-					if(dotans(fx3,Rd)>0){
-						fx3=node(0,0,0)-fx3;   //得到法向
-					}
-					Ka=paramt((Ka.r*2+temp.Ka.r)/3,(Ka.g*2+temp.Ka.g)/3,(Ka.b*2+temp.Ka.b)/3);
-					Kd=paramt((Kd.r*2+temp.Kd.r)/3,(Kd.g*2+temp.Kd.g)/3,(Kd.b*2+temp.Kd.b)/3);
-				}			
-				
-			}		
+				node fx2=temp.getfx();
+				if(dotans(fx2,Rd)>0){
+					fx2=node(0,0,0)-fx2;   //得到法向
+				}
+				fx2=fx2/fx2.getlenth();
+				fx=fx+fx2;
+			}
 		}
 	}
 	if(mymin==1000000000){
 		return node(0,0,0);
 	}
 	else{
-		if(R0next.x>=mysource.xl && R0next.x<=mysource.xh && R0next.y>=mysource.yl && R0next.y<=mysource.yh && abs(R0next.z-mysource.height)<1){
+		if(R0next.x>=mysource.xl && R0next.x<=mysource.xh && R0next.y>=mysource.yl && R0next.y<=mysource.yh && abs(R0next.z-mysource.height)<0.1){
+			return node(255,255,255);
+		}
+		fx=fx/fx.getlenth();
+		color=node(0,0,0);
+		for(int i=mysource.xl;i<=mysource.xh;i++){
+			for(int j=mysource.yl;j<=mysource.yh;j++){
+				if(islightok(R0next+fx/1000,node(i,j,mysource.height))==0){
+					continue;
+				}
+				node rushe=node(i,j,mysource.height)-R0next;
+				rushe=rushe/rushe.getlenth();
+				double cosln=abs(dotans(rushe,fx));
+				color=color+getcolor(Kd,node(255,255,255))/(1.0/cosln);
+			}
+		}
+		color=color/1681;
+		color=color+getcolor(Ka,node(0.2*255,0.2*255,0.2*255));
+	}
+	return color;
+}
+*/
+node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
+	double mymin=1000000000;
+	node R0next=node(-1,-1,-1);
+	node R1next=node(-1,-1,-1);
+	node fx=node(-1,-1,-1);
+	paramt Ka;   //反射折射系数
+	paramt Kd;
+	triangle temp;
+	int ishave=0;
+	char name[20];
+	for(int i=0;i<envir.size();i++){
+		for(int j=0;j<envir[i].num;j++){
+			//printf("%d %d\n",i,j);
+			temp=envir[i].get_one(j);
+			node crosspoint=temp.getjd(R0,Rd);   //求交点
+			if(crosspoint.x<0){   //无交点就换
+				continue;
+			}
+			double dis=(crosspoint-R0).getlenth();
+			if(dis<mymin){
+				strcpy(name,envir[i].name);
+				fx=temp.getfx();
+				mymin=dis;
+				if(dotans(fx,Rd)>0){
+					fx=node(0,0,0)-fx;   //得到法向
+				}
+				R0next=crosspoint;
+				Ka=envir[i].Ka;
+				Kd=envir[i].Kd;
+			}
+		}
+	}
+	if(mymin==1000000000){
+		return node(0,0,0);
+	}
+	else{
+		if(strcmp(name,"#light")==0){
 			return node(18.9914*255,14.4266*255,3.8927*255);
 		}
 		if(index==2){
 			return getcolor(Ka,node(0.5*255,0.5*255,0.5*255));
 		}
 		node color=node(0,0,0);
-		node fxnew; 
+		node l1,l2;   //垂直第一第二分量l1,l2
 		fx=fx/fx.getlenth();
 		R0next=R0next+fx/1000;
 		double N=600;
 		int m;
 		int jishu=1;
-        double sum=0;
-        for(int i=1;i<30;i++){
-            sum+=cos(i*3.0/180.0*3.1416);
-        }
+		double sum=0;
 		for(int i=1;i<30;i++){
+			sum+=cos(i*3.0/180.0*3.1416);
+		}
+		node fxnew;
+		for(int i=1;i<=30;i++){
 			m=(int)(N*cos(i*3.0/180.0*3.1416)/sum+0.5);
+			jishu+=m;
+			if((temp.n1-R0next).getlenth()<1){
+				fxnew=fx/(1.0/sin(i*3.0/180.0*3.1416))+((temp.n2-R0next)/(temp.n2-R0next).getlenth())/(1.0/cos(i*3.0/180.0*3.1416));
+			}
+			else{
+				fxnew=fx/(1.0/sin(i*3.0/180.0*3.1416))+((temp.n1-R0next)/(temp.n1-R0next).getlenth())/(1.0/cos(i*3.0/180.0*3.1416));
+			}
 			for(int j=1;j<=m;j++){
-				if(fx.x!=0){
-					fxnew=node(fx.x/abs(fx.x)*sin(i*3.0/180.0*3.1416),cos(i*3.0/180.0*3.1416)*cos(2.0/m*j*3.1416),cos(i*3.0/180.0*3.1416)*sin(2.0/m*j*3.1416));
-				}
-				else if(fx.y!=0){
-					fxnew=node(cos(i*3.0/180.0*3.1416)*cos(2.0/m*j*3.1416),fx.y/abs(fx.y)*sin(i*3.0/180.0*3.1416),cos(i*3.0/180.0*3.1416)*sin(2.0/m*j*3.1416));
-				}
-				else if(fx.z!=0){
-					fxnew=node(cos(i*3.0/180.0*3.1416)*cos(2.0/m*j*3.1416),cos(i*3.0/180.0*3.1416)*sin(2.0/m*j*3.1416),fx.z/abs(fx.z)*sin(i*3.0/180.0*3.1416));
-				}
-				if(ishave==0){
-					color=color+getcolor(Kd,findcolor(R0next,fxnew,index+1));
-					jishu++;
-				}
-				else if(ishave==1){
-					if(dotans(fxnew,fx2)>=0){
-						color=color+getcolor(Kd,findcolor(R0next,fxnew,index+1));
-						jishu++;						
-					}
-				}
-				else if(ishave==2){
-					if(dotans(fxnew,fx2)>=0 && dotans(fxnew,fx3)>=0){
-						color=color+getcolor(Kd,findcolor(R0next,fxnew,index+1));
-						jishu++;						
-					}					
-				}
-				
+				fxnew=myrotate(fx,fxnew,(double)360/(double)m);
+				color=color+getcolor(Kd,findcolor(R0next,fxnew,index+1));
 			}
 		}
 		color=color+getcolor(Kd,findcolor(R0next,fx,index+1));
 		color=color/jishu;
-        color=color+getcolor(Ka,node(0.5*255,0.5*255,0.5*255));
+		color=color+getcolor(Ka,node(0.5*255,0.5*255,0.5*255));
 		return color;
 	}
 }
+
+void readmtl(){
+	FILE *fpListFile=fopen("D:\\img.mtl","r"); 
+	char mys[20];
+	int mycount=0;
+	int nownum=0;
+	int myflag=0;   //1代表Ka,2代表Kd,3代表Ks
+	while(fscanf(fpListFile,"%s",mys)!=EOF){    //读入材料表面信息 
+		if(mys[0]=='#'){
+			lightmatter temp=lightmatter();
+			strcpy(temp.name,mys);
+			envir.push_back(temp);
+		}
+		else if(mys[0]=='K'){
+			if(mys[1]=='a') myflag=1;
+			if(mys[1]=='d') myflag=2;
+			if(mys[1]=='s') myflag=3;
+			mycount=0;
+		} 
+		else if(myflag!=0){
+			mycount++;
+			if(mycount==3){
+				mycount=0;
+			}
+			int pos=-1;
+			double myans=0;
+			int mylen=strlen(mys);
+			for(int i=0;i<mylen;i++){
+				if(mys[i]=='.'){
+					pos=i;
+				}
+			}
+			if(pos==-1){
+				pos=mylen-1;
+			}
+			for(int i=mylen-1;i>=0;i--){
+				if(mys[i]=='.'){
+					pos=pos-1;
+					continue;
+				} 
+				myans+=pow(10,pos-i)*(mys[i]-'0');
+			}
+			if(myflag==1){
+				if(mycount==0){
+					envir[nownum].Ka.b=myans;
+				}
+				else if(mycount==1){
+					envir[nownum].Ka.r=myans;
+				}
+				else if(mycount==2){
+					envir[nownum].Ka.g=myans;
+				}
+			}
+			else if(myflag==2){
+				if(mycount==0){
+					envir[nownum].Kd.b=myans;
+				}
+				else if(mycount==1){
+					envir[nownum].Kd.r=myans;
+				}
+				else if(mycount==2){
+					envir[nownum].Kd.g=myans;
+				}
+			}
+			else if(myflag==3){
+				if(mycount==0){
+					envir[nownum].Ks.b=myans;
+					nownum++;
+					myflag=0;
+				}
+				else if(mycount==1){
+					envir[nownum].Ks.r=myans;
+				}
+				else if(mycount==2){
+					envir[nownum].Ks.g=myans;
+				}
+			}		
+		}
+	} 
+}
+
+void readobj(){
+	char mys[20];
+	std::vector <node> myvec;
+	FILE *fpListFile=fopen("D:\\img.obj","r"); 
+	lightmatter temp;
+	int vflag=0,fflag=0,f1,f2,f3,index,ii;
+	double v1,v2,v3;
+	while(fscanf(fpListFile,"%s",mys)!=EOF){    //读入node及triangle信息，需要建立一个node的vector来预存储 
+		//printf("%s\n",mys);
+		if(mys[0]=='#'){
+			for(ii=0;ii<envir.size();ii++){
+				if(strcmp(envir[ii].name,mys)==0){
+					temp=envir[ii];
+					index=0;
+					break;
+				}
+			}
+		}
+		else if(mys[0]=='v'){
+			vflag=1;
+		}
+		else if(mys[0]=='f'){
+			fflag=1;
+		}
+		else if(mys[0]-'0'>=0 && mys[0]-'9'<=0){
+			int pos=-1;
+			double myans=0;
+			int mylen=strlen(mys);
+			for(int i=0;i<mylen;i++){
+				if(mys[i]=='.'){
+					pos=i;
+				}
+			}
+			if(pos==-1){
+				pos=mylen-1;
+			}
+			for(int i=mylen-1;i>=0;i--){
+				if(mys[i]=='.'){
+					pos=pos-1;
+					continue;
+				} 
+				myans+=pow(10,pos-i)*(mys[i]-'0');
+			}
+			if(vflag!=0){
+				if(vflag==1){
+					v1=myans;
+					vflag++;
+				}
+				else if(vflag==2){
+					v2=myans;
+					vflag++;
+				}
+				else if(vflag==3){
+					v3=myans;
+					vflag=0;
+					myvec.push_back(node(v1,v2,v3));
+				}
+			}
+			else if(fflag!=0){
+				if(fflag==1){
+					f1=myans;
+					fflag++;
+				}
+				else if(fflag==2){
+					f2=myans;
+					fflag++;
+				}
+				else if(fflag==3){
+					f3=myans;
+					fflag=0;
+					//printf("addone %d\n",index);
+					envir[ii].add_one(triangle(myvec[f1-1],myvec[f2-1],myvec[f3-1]),index);
+					index++;
+				}
+			}
+		}
+	}
+}
+
+
+
 
 
