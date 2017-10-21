@@ -7,12 +7,9 @@ using namespace std;
 
 int main(){
 	readmtl();
-	readobj();
-
-
-	
-	camera mycamera=camera(node(500,100,100));  //相机位置
-	screen myscreen=screen(100,100,node(200,0,200),2); 
+//	readobj();
+//	camera mycamera=camera(node(250,250,-100));  //相机位置
+//	screen myscreen=screen(100,100,node(500,500,0),5); 
 /*	mycamera.getpicture(myscreen);
 	int TIM=100;
 	FILE *fp;

@@ -234,7 +234,7 @@ screen::screen(int row,int col,node pos,double d){
 }
 
 node screen::get_pos(int row,int col){
-	return this->pos+node(0,(2*col-1)*this->d/2,-(2*row-1)*this->d/2);  //假设屏幕与yz平面平行
+	return this->pos+node(500-(2*col-1)*this->d/2,500-(2*row-1)*this->d/2,0);  //假设屏幕与yz平面平行
 }
 
 source::source(double xl,double xh,double yl,double yh,double height){
