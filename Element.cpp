@@ -446,7 +446,7 @@ node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
 }
 
 void readmtl(){
-	FILE *fpListFile=fopen("D:\\img.mtl","r"); 
+	FILE *fpListFile=fopen("img.mtl","r"); 
 	char mys[20];
 	int mycount=0;
 	int nownum=0;
@@ -528,7 +528,7 @@ void readmtl(){
 void readobj(){
 	char mys[20];
 	std::vector <node> myvec;
-	FILE *fpListFile=fopen("D:\\img.obj","r"); 
+	FILE *fpListFile=fopen("img.obj","r"); 
 	lightmatter temp;
 	int vflag=0,fflag=0,f1,f2,f3,index,ii;
 	double v1,v2,v3;
