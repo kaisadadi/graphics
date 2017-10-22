@@ -9,8 +9,13 @@ int main(){
 	readmtl();
 	readobj();
 	camera mycamera=camera(node(250,250,-100));  //相机位置
-	screen myscreen=screen(100,100,node(500,500,0),5); 
+	screen myscreen=screen(10,10,node(500,500,0),50); 
+	//findcolor(node(250,250,-100),node(0,0,1),0).show();
 	mycamera.getpicture(myscreen);
+//	readobj();
+//	camera mycamera=camera(node(250,250,-100));  //相机位置
+//	screen myscreen=screen(100,100,node(500,500,0),5); 
+/*	mycamera.getpicture(myscreen);
 	int TIM=100;
 	FILE *fp;
 	fp=fopen("ans.ppm","wb");
@@ -25,5 +30,6 @@ int main(){
 		}
 	}
 	fclose(fp);
+	*/
 	return 0;
 }

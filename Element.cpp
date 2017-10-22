@@ -234,7 +234,7 @@ screen::screen(int row,int col,node pos,double d){
 }
 
 node screen::get_pos(int row,int col){
-	return this->pos+node(500-(2*col-1)*this->d/2,500-(2*row-1)*this->d/2,0);  //假设屏幕与yz平面平行
+	return this->pos+node(-(2*col-1)*this->d/2,-(2*row-1)*this->d/2,0);  //假设屏幕与yz平面平行
 }
 
 source::source(double xl,double xh,double yl,double yh,double height){
@@ -252,6 +252,7 @@ void camera::getpicture(screen sc){
 			node mypos=sc.get_pos(i,j);
 			//mypos.show();
 			//node mycolor=findcolor(mypos,mypos-(this->pos));
+			(mypos-(this->pos)).show();
 			node mycolor=findcolor(this->pos,mypos-(this->pos),0);
 			paintcolor[i-1][j-1][0]=mymin(mycolor.x,255);
 			paintcolor[i-1][j-1][1]=mymin(mycolor.y,255);
@@ -307,70 +308,11 @@ node getcolor(paramt Kd, node R){
 	newcolor.z+=Kd.b*R.z;
 	return newcolor;
 }
-/*
-node findcoloragain(node R0,node Rd){
-	double mymin=1000000000;
-	node fx=node(-1,-1,-1);
-	node R0next;
-	paramt Kd,Ka;
-	triangle temp;
-	node color;
-	for(int i=0;i<envir.size();i++){
-		for(int j=0;j<envir[i].num;j++){
-			temp=envir[i].get_one(j);
-			node crosspoint=temp.getjd(R0,Rd);   //求交点
-			if(crosspoint.x<0){   //无交点就换
-				continue;
-			}
-			double dis=(crosspoint-R0).getlenth();
-			if(dis<mymin){
-				fx=temp.getfx();
-				fx=fx/fx.getlenth();
-				mymin=dis;
-				if(dotans(fx,Rd)>0){
-					fx=node(0,0,0)-fx;   //得到法向
-				}
-				R0next=crosspoint;
-				Ka=envir[i].Ka;
-				Kd=envir[i].Kd;
-			}
-			else if(dis==mymin){
-				node fx2=temp.getfx();
-				if(dotans(fx2,Rd)>0){
-					fx2=node(0,0,0)-fx2;   //得到法向
-				}
-				fx2=fx2/fx2.getlenth();
-				fx=fx+fx2;
-			}
-		}
-	}
-	if(mymin==1000000000){
-		return node(0,0,0);
-	}
-	else{
-		if(R0next.x>=mysource.xl && R0next.x<=mysource.xh && R0next.y>=mysource.yl && R0next.y<=mysource.yh && abs(R0next.z-mysource.height)<0.1){
-			return node(255,255,255);
-		}
-		fx=fx/fx.getlenth();
-		color=node(0,0,0);
-		for(int i=mysource.xl;i<=mysource.xh;i++){
-			for(int j=mysource.yl;j<=mysource.yh;j++){
-				if(islightok(R0next+fx/1000,node(i,j,mysource.height))==0){
-					continue;
-				}
-				node rushe=node(i,j,mysource.height)-R0next;
-				rushe=rushe/rushe.getlenth();
-				double cosln=abs(dotans(rushe,fx));
-				color=color+getcolor(Kd,node(255,255,255))/(1.0/cosln);
-			}
-		}
-		color=color/1681;
-		color=color+getcolor(Ka,node(0.2*255,0.2*255,0.2*255));
-	}
-	return color;
-}
-*/
+		
 node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
+	/*printf("index= %d\n",index);
+	R0.show();
+	Rd.show();*/
 	double mymin=1000000000;
 	node R0next=node(-1,-1,-1);
 	node R1next=node(-1,-1,-1);
@@ -381,6 +323,7 @@ node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
 	int ishave=0;
 	char name[20];
 	for(int i=0;i<envir.size();i++){
+		//printf("name= %s\n",envir[i].name);
 		for(int j=0;j<envir[i].num;j++){
 			//printf("%d %d\n",i,j);
 			temp=envir[i].get_one(j);
@@ -446,7 +389,7 @@ node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
 }
 
 void readmtl(){
-	FILE *fpListFile=fopen("img.mtl","r"); 
+	FILE *fpListFile=fopen("D:\\img.mtl","r"); 
 	char mys[20];
 	int mycount=0;
 	int nownum=0;
@@ -528,7 +471,7 @@ void readmtl(){
 void readobj(){
 	char mys[20];
 	std::vector <node> myvec;
-	FILE *fpListFile=fopen("img.obj","r"); 
+	FILE *fpListFile=fopen("D:\\img.obj","r"); 
 	lightmatter temp;
 	int vflag=0,fflag=0,f1,f2,f3,index,ii;
 	double v1,v2,v3;
