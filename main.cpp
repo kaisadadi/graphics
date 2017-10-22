@@ -8,10 +8,10 @@ using namespace std;
 int main(){
 	readmtl();
 	readobj();
-	camera mycamera=camera(node(250,250,-10));  //相机位置
-	screen myscreen=screen(10,10,node(500,500,0),50); 
+	camera mycamera=camera(node(250,250,-500));  //相机位置
+	screen myscreen=screen(100,100,node(500,500,0),5); 
 //	mycamera.getpicture(myscreen);
-	int TIM=100;
+	int TIM=500;
 	FILE *fp;
 	fp=fopen("ans.ppm","wb");
 	fprintf(fp,"P6\n%d %d\n255\n",TIM,TIM);
