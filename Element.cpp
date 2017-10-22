@@ -328,7 +328,7 @@ node findcolor(node R0,node Rd,int index){   //应该乘以当前面的Ks，修改！
 			//printf("%d %d\n",i,j);
 			temp=envir[i].get_one(j);
 			node crosspoint=temp.getjd(R0,Rd);   //求交点
-			if(crosspoint.x<0){   //无交点就换
+			if(crosspoint.x==-1){   //无交点就换
 				continue;
 			}
 			double dis=(crosspoint-R0).getlenth();
